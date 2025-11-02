@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 	"math/rand"
 	"os"
 	"testing"
@@ -35,7 +35,8 @@ func TestMain(m *testing.M) {
 	nameDB := "test.db"
 	db, err := sql.Open("sqlite", nameDB)
 	if err != nil {
-		log.Fatalf("pre-test: err open base - %v", err)
+		fmt.Fprintf(os.Stderr, "pre-test: err open base - %v", err)
+		os.Exit(1)
 	}
 	queryStr := `CREATE TABLE parcel (
 		number INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,14 +48,16 @@ func TestMain(m *testing.M) {
 
 	_, err = db.Exec(queryStr)
 	if err != nil {
-		log.Fatalf("pre-test: err create table - %v", err)
+		fmt.Fprintf(os.Stderr,"pre-test: err create table - %v", err)
+		os.Exit(1)
 	}
 
 	m.Run()
 
 	err = os.Remove("test.db")
 	if err != nil {
-		log.Fatalf("post-test: err deelte database - %v", err)
+		fmt.Fprintf(os.Stderr,"post-test: err deelte database - %v", err)
+		os.Exit(1)
 	}
 }
 
@@ -63,6 +66,7 @@ func TestAddGetDelete(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "test.db") // настройте подключение к БД
 	require.NoError(t, err)
+	defer db.Close()
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 
@@ -94,6 +98,7 @@ func TestSetAddress(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "test.db") // настройте подключение к БД
 	require.NoError(t, err)
+	defer db.Close()
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 
@@ -121,6 +126,7 @@ func TestSetStatus(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "test.db") // настройте подключение к БД
 	require.NoError(t, err)
+	defer db.Close()
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
 
@@ -147,6 +153,7 @@ func TestGetByClient(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "test.db") // настройте подключение к БД
 	require.NoError(t, err)
+	defer db.Close()
 	store := NewParcelStore(db)
 
 	parcels := []Parcel{
@@ -188,5 +195,6 @@ func TestGetByClient(t *testing.T) {
 		// убедитесь, что все посылки из storedParcels есть в parcelMap
 		// убедитесь, что значения полей полученных посылок заполнены верно
 		require.Contains(t, parcelMap, parcel.Number)
+		require.Equal(t, parcelMap[parcel.Number], parcel)
 	}
 }
